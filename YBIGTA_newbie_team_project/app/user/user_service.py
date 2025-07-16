@@ -84,7 +84,7 @@ class UserService:
         if user is None:
             raise ValueError("User not found.")
         user.password = user_update.new_password
-        updated_user = self.repo.update_user(user)
+        updated_user = self.repo.save_user(user)
         return updated_user
     
     
