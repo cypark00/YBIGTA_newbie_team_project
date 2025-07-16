@@ -44,6 +44,7 @@ class UserService:
         
         self.repo.save_user(new_user)
         return new_user
+        
     def delete_user(self, email: str) -> User:
         ## TODO
         '''
