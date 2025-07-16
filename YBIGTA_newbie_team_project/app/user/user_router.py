@@ -51,5 +51,21 @@ def delete_user(user_delete_request: UserDeleteRequest, service: UserService = D
 
 @user.put("/update-password", response_model=BaseResponse[User], status_code=status.HTTP_200_OK)
 def update_user_password(user_update: UserUpdate, service: UserService = Depends(get_user_service)) -> BaseResponse[User]:
-    ## TODO
-    return None
+    """
+    사용자 비밀번호 변경 API
+    
+    Parameters:
+    user_update (UserUpdate): 비밀번호 업데이트 요청 정보 (email, new_password)
+    service (UserService): 사용자 서비스 의존성 주입
+    
+    Returns:
+    BaseResponse[User]: 비밀번호가 성공적으로 업데이트된 사용자 정보와 성공 메시지
+    
+    Raises:
+    HTTPException: 사용자 정보가 없거나 비밀번호 업데이트에 실패한 경우 (status code 404)
+    """
+    try:
+        updated_user = service.update_user_pwd(user_update)
+        return BaseResponse(status="success", data=updated_user, message="User password updated successfully.")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
