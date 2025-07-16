@@ -19,7 +19,14 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         h1 {
+            color: #0f25e8;
+        }
+        h2 {
             color: #333;
+            text-align: left;
+            margin-left: 50px;
+            font-size: 20px;
+            font-weight: bold;
         }
         form {
             margin: 20px 0;
@@ -31,10 +38,11 @@
             font-size: 16px;
         }
         button {
-            background-color: #5c9ded;
+            background-color: #0f25e8;
             border: none;
             color: white;
-            padding: 10px 20px;
+            width: 84%;
+            padding: 10px 10px;
             margin: 10px;
             font-size: 16px;
             cursor: pointer;
@@ -47,6 +55,7 @@
 <body>
     <div class="container" id="login-screen">
         <h1>User Management</h1>
+        <p>Please log in or register to continue.</p>
         <div class="section" id="login-section">
             <h2>Login</h2>
             <form id="login-form">
@@ -55,11 +64,22 @@
                 <button type="button" onclick="loginUser()">Login</button>
             </form>
         </div>
-        <div class="section" id="register-section">
+        <button type="button" onclick="document.getElementById('register-section').style.display = 'block';">Sign in here</button>
+        <div class="section" id="register-section" style="display: none;">
             <h2>Register</h2>
             <form id="register-form">
                 <input type="email" id="register-email" placeholder="Email" required><br>
                 <input type="password" id="register-password" placeholder="Password" required><br>
+                <input type="text" id="register-username" placeholder="Username" required><br>
+                <button type="button" onclick="registerUser()">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container" id="logged-in-screen" style="display: none;">
+        <h1>Welcome, <span id="username"></span></h1>
+        <div class="section" id="update-password-section">
+            <h2>Update Password</h2>
                 <input type="text" id="register-username" placeholder="Username" required><br>
                 <button type="button" onclick="registerUser()">Register</button>
             </form>
