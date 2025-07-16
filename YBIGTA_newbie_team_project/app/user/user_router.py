@@ -47,7 +47,7 @@ def register_user(user: User, service: UserService = Depends(get_user_service)) 
 def delete_user(user_delete_request: UserDeleteRequest, service: UserService = Depends(get_user_service)) -> BaseResponse[User]:
     
     try:
-        deleted_user = service.delete_user(user_delete_request)
+        deleted_user = service.delete_user(user_delete_request.email)
         return BaseResponse(        
             status="success",
             message="User Deletion Success",
