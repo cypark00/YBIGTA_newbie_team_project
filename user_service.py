@@ -16,14 +16,7 @@ class UserService:
             raise ValueError("Invalid ID/PW")
         # 이메일과 비밀번호가 모두 일치하면 사용자 정보 반환
         return user
-        
-    def register_user(self, new_user: User) -> User:
-        ## TODO
-        new_user = None
-        return new_user
-
-    def delete_user(self, email: str) -> User:
-        ## TODO        
+             
     def delete_user(self, email: str) -> User:
         ## TODO
         '''
