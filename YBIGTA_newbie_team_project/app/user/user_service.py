@@ -25,7 +25,7 @@ class UserService:
         if not user:
             raise ValueError("User not Found.")
         if user.password != user_login.password:
-            raise ValueError("Invalid PW")
+            raise ValueError("Invalid ID/PW")
         return user
 
         
