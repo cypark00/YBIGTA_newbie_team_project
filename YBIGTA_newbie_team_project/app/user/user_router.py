@@ -49,7 +49,7 @@ def delete_user(user_delete_request: UserDeleteRequest, service: UserService = D
     try:
         deleted_user = service.delete_user(user_delete_request)
         return BaseResponse(        
-            status=status.HTTP_200_OK,
+            status="success",
             message="User Deletion Success",
             data=deleted_user)
     except ValueError as e:
