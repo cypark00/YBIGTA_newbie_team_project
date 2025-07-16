@@ -45,8 +45,15 @@ def register_user(user: User, service: UserService = Depends(get_user_service)) 
 
 @user.delete("/delete", response_model=BaseResponse[User], status_code=status.HTTP_200_OK)
 def delete_user(user_delete_request: UserDeleteRequest, service: UserService = Depends(get_user_service)) -> BaseResponse[User]:
-    ## TODO
-    return None
+    
+    try:
+        deleted_user = service.delete_user(user_delete_request)
+        return BaseResponse(        
+            status=status.HTTP_200_OK,
+            message="User Deletion Success",
+            data=deleted_user)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @user.put("/update-password", response_model=BaseResponse[User], status_code=status.HTTP_200_OK)
