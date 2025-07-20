@@ -1,4 +1,4 @@
-from base_crawler import BaseCrawler
+from review_analysis.crawling.base_crawler import BaseCrawler
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
