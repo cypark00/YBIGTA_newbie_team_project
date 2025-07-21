@@ -118,4 +118,4 @@ class MyRealTripCrawler(BaseCrawler):
         """
         reviews = self.scrape_reviews()
         output_path = os.path.join(self.output_dir, "reviews_myrealtrip.csv")
-        pd.DataFrame(reviews).to_csv(output_path, index=True, encoding='utf-8-sig')
+        pd.DataFrame(reviews).to_csv(output_path, encoding='utf-8-sig')
