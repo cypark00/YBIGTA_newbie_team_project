@@ -3,7 +3,7 @@ import glob
 from argparse import ArgumentParser
 from typing import Dict, Type
 from review_analysis.preprocessing.base_processor import BaseDataProcessor
-from review_analysis.preprocessing.example_processor import ExampleProcessor
+from YBIGTA_newbie_team_project.review_analysis.preprocessing.general_review_processor import ExampleProcessor
 
 
 # 모든 preprocessing 클래스를 예시 형식으로 적어주세요. 
