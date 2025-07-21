@@ -47,4 +47,7 @@ class ExampleProcessor(BaseDataProcessor):
 
 
     def save_to_database(self):
-        pass
+        filename = f"preprocessed_reviews_{self.site_name}.csv"
+        output_path = os.path.join(self.output_dir, filename)
+        self.df.to_csv(output_path, index=False)
+        print(f"[INFO] 저장 완료: {output_path}"
