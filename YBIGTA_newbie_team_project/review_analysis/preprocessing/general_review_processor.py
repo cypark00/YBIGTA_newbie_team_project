@@ -37,7 +37,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
         
         # 리뷰 텍스트 임베딩
         model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.df["content_embedding"] = self.df["review"].apply(lambda x: model.encode(x).tolist())
+        self.df["content_embedding"] = self.df["content"].apply(lambda x: model.encode(x).tolist())
 
     
     def feature_engineering(self):
