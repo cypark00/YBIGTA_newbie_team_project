@@ -129,7 +129,7 @@ class TripDotComCrawler(BaseCrawler):
     def save_to_database(self):
         os.makedirs(self.output_dir, exist_ok=True)
         df = pd.DataFrame(self.reviews)
-        save_path = os.path.join(self.output_dir, 'tripdotcom_reviews.csv')
+        save_path = os.path.join(self.output_dir, 'reviews_tripdotcom.csv')
         df.to_csv(save_path, index=False)
         self.logger.info(f"{len(self.reviews)}개의 리뷰가 저장되었습니다 → {save_path}")
 
