@@ -2,7 +2,7 @@ from review_analysis.preprocessing.base_processor import BaseDataProcessor
 import pandas as pd
 import os
 import re
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from datetime import datetime
 
 class GeneralReviewProcessor(BaseDataProcessor):
@@ -36,8 +36,8 @@ class GeneralReviewProcessor(BaseDataProcessor):
         self.df.drop_duplicates(subset=["content"], inplace=True)
         
         # 리뷰 텍스트 임베딩
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.df["content_embedding"] = self.df["review"].apply(lambda x: model.encode(x).tolist())
+        # model = SentenceTransformer("all-MiniLM-L6-v2")
+        # self.df["content_embedding"] = self.df["review"].apply(lambda x: model.encode(x).tolist())
 
     
     def feature_engineering(self):
@@ -53,7 +53,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
 
 
     def save_to_database(self):
-        filename = f"preprocessed_{os.path.basename(self.input_path)}.csv"
+        filename = f"preprocessed_{os.path.basename(self.input_path)}"
         output_path = os.path.join(self.output_dir, filename)
         self.df.to_csv(output_path, index=False)
         print(f"[INFO] 저장 완료: {output_path}")
