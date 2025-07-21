@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-class ExampleProcessor(BaseDataProcessor):
+class GeneralReviewProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
         self.df = pd.read_csv(input_path)
