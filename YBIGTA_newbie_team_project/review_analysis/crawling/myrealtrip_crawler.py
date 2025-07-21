@@ -12,12 +12,30 @@ import time
 import os
 
 class MyRealTripCrawler(BaseCrawler):
+    """
+    마이리얼트립 웹사이트에서 특정 상품의 리뷰를 크롤링하는 클래스.
+    
+    Attributes:
+        base_url (str): 크롤링 대상 마이리얼트립 상품의 URL
+        driver (webdriver): Selenium 웹드라이버 인스턴스
+    """
+
     def __init__(self, output_dir: str):
+        """
+        MyRealTripCrawler 클래스의 생성자.
+        
+        Args:
+            output_dir (str): 크롤링한 리뷰 데이터를 저장할 디렉토리 경로
+        """
         super().__init__(output_dir)
         self.base_url = 'https://www.myrealtrip.com/offers/70816'
         self.driver = None
         
     def start_browser(self):
+        """
+        Chrome 웹드라이버를 설정하고 브라우저를 시작한 후,
+        크롤링 대상 URL로 이동함.
+        """
         chrome_options = Options()
         chrome_options.add_experimental_option("detach", True)
         chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
@@ -36,7 +54,13 @@ class MyRealTripCrawler(BaseCrawler):
             pass
     
     def scrape_reviews(self):
-                
+        """
+        리뷰 페이지를 탐색하며 사용자 리뷰 데이터를 수집함.
+        최대 100번 '더보기' 버튼 클릭을 시도하고, 최대 500개의 리뷰를 수집함.
+
+        Returns:
+            list of tuples: (rating, date, text) 형태의 리뷰 데이터 리스트
+        """
         reviews = []
 
         # 리뷰 더보기 버튼 여러 번 클릭
@@ -47,9 +71,8 @@ class MyRealTripCrawler(BaseCrawler):
                 time.sleep(1)
             except Exception as e:
                 print(f"{i}번째 클릭 실패: {e}")
-                break  # 더 이상 클릭할 버튼이 없으면 종료
+                break
 
-        # 현재 페이지의 HTML 소스 파싱
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
         data_rows = soup.find_all('div', class_='offer-review__list--content')
 
@@ -72,7 +95,6 @@ class MyRealTripCrawler(BaseCrawler):
             texts = list(date_div.stripped_strings)
             date = texts[-1] if texts else ""
             
-
             # 리뷰 내용
             text = ""
             wrapper = row.find('div', class_='offer-review__list--wrapper')
@@ -88,10 +110,12 @@ class MyRealTripCrawler(BaseCrawler):
 
             reviews.append((rating, date, text))
 
-        return reviews
+        return pd.DataFrame(reviews, columns=['rating','date','content'])
             
     def save_to_database(self):
+        """
+        리뷰를 크롤링하고 지정된 디렉토리에 CSV 파일로 저장함.
+        """
         reviews = self.scrape_reviews()
         output_path = os.path.join(self.output_dir, "reviews_myrealtrip.csv")
-        pd.DataFrame(reviews).to_csv(output_path, index=False)        
-        
+        pd.DataFrame(reviews).to_csv(output_path, index=False)
