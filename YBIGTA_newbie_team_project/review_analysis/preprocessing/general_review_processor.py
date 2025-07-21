@@ -8,9 +8,12 @@ from datetime import datetime
 class GeneralReviewProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
-        self.df = pd.read_csv(input_path , encoding='utf-8')
+        self.df = pd.read_csv(input_path, encoding='utf-8')
 
     def preprocess(self):
+        # 컬럼 남기기
+        self.df = self.df[["rating", "date", "content"]]
+        
         # 결측치 제거
         self.df.dropna(subset=["rating", "date", "content"], inplace=True)
 
