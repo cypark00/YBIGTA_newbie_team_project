@@ -9,7 +9,9 @@ from review_analysis.preprocessing.example_processor import ExampleProcessor
 # 모든 preprocessing 클래스를 예시 형식으로 적어주세요. 
 # key는 "reviews_사이트이름"으로, value는 해당 처리를 위한 클래스
 PREPROCESS_CLASSES: Dict[str, Type[BaseDataProcessor]] = {
-    "reviews_example": ExampleProcessor,
+    "reviews_kakaomap": ExampleProcessor,
+    "reviews_myrealtrip": ExampleProcessor,
+    "reviews_tripdotcom": ExampleProcessor
     # key는 크롤링한 csv파일 이름으로 적어주세요! ex. reviews_naver.csv -> reviews_naver
 }
 
