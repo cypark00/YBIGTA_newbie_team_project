@@ -9,6 +9,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
         self.df = pd.read_csv(input_path)
+        self.site_name = os.path.splitext(os.path.basename(input_path))[0].replace("reviews_", "")
 
     def preprocess(self):
         # 결측치 제거
@@ -26,7 +27,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
 
         # 리뷰 길이 제한
         self.df["review_length"] = self.df["review"].apply(len)
-        self.df = self.df[(self.df["review_length"] > 5) % (self.df["review_length"] < 1000)]
+        self.df = self.df[(self.df["review_length"] > 5) & (self.df["review_length"] < 1000)]
 
         # 공백 문자열 제거
         self.df["review"] = self.df["review"].str.strip()
