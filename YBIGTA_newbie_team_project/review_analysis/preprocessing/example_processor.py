@@ -11,27 +11,27 @@ class ExampleProcessor(BaseDataProcessor):
 
     def preprocess(self):
         # 결측치 제거
-        df.dropna(subset=["rating", "review", "date"], inplace=True)
+        self.df.dropna(subset=["rating", "review", "date"], inplace=True)
 
         # 별점 범위 이상치 제거
-        df = df[df["rating"].between(1, 5)]
+        self.df = df[df["rating"].between(1, 5)]
 
         # 날짜 범위 이상치 제거
         today = datetime.today()
-        df = df[(df["date"] >= pd.Timestamp("2022-01-01")) & (df["date"] <= today)]
+        self.df = df[(df["date"] >= pd.Timestamp("2022-01-01")) & (df["date"] <= today)]
 
         # 특수문제 제거
-        df["review"] = df["review"].apply(lambda x: re.sub(r'[^\w\s]', '', x))
+        self.df["review"] = df["review"].apply(lambda x: re.sub(r'[^\w\s]', '', x))
 
         # 리뷰 길이 제한
-        df["review_length"] = df["review"].apply(len)
-        df = df[(df["review_length"] > 5) % (df["review_length"] < 1000)]
+        self.df["review_length"] = df["review"].apply(len)
+        self.df = df[(df["review_length"] > 5) % (df["review_length"] < 1000)]
 
         # 공백 문자열 제거
-        df["review"] = df["review"].str.strip()
+        self.df["review"] = df["review"].str.strip()
 
         # 중복 리뷰 제거
-        df.drop_duplicates(subset=["review"], inplace=True)
+        self.df.drop_duplicates(subset=["review"], inplace=True)
 
     
     def feature_engineering(self):
