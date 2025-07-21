@@ -23,7 +23,9 @@ class GeneralReviewProcessor(BaseDataProcessor):
         self.df = self.df[(self.df["date"] >= pd.Timestamp("2022-01-01")) & (self.df["date"] <= today)]
 
         # 특수문자 제거
-        self.df["content"] = self.df["content"].apply(lambda x: re.sub(r'[^\w\s]', '', x))
+        self.df["content"] = self.df["content"].apply(
+            lambda x: re.sub(r'[^\w\s]', '', x).replace('\n', '').replace('"', '')
+        )
 
         # 리뷰 길이 제한
         self.df["review_length"] = self.df["content"].apply(len)
