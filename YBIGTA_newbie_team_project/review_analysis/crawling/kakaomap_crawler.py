@@ -28,13 +28,14 @@ class KakaoMapCrawler(BaseCrawler):
         time.sleep(3)
     
     def scrape_reviews(self):
-        self.start_browser()
+        if self.driver is None:
+            self.start_browser()
         print("크롤링 시작")
 
         scroll_count = 0
         seen_reviews = set()
         collected = 0 
-        no_new_data_count = 0
+    
 
 
         while collected < 500:
@@ -46,7 +47,6 @@ class KakaoMapCrawler(BaseCrawler):
                 if not review_items:
                     print("리뷰 항목 없음. 페이지 구조 확인 필요.")
                     break
-                new_data_found = False
 
                 for item in review_items:
                     try: 
@@ -64,9 +64,7 @@ class KakaoMapCrawler(BaseCrawler):
                             self.reviews.append(review)
                             seen_reviews.add(review)
                             collected += 1
-                            new_data_found = True
                             print(f"{len(self.reviews)}번째 리뷰 수집됨")
-                            new_found = True
 
 
                         if collected >= 500:
@@ -76,17 +74,9 @@ class KakaoMapCrawler(BaseCrawler):
                         print(f"리뷰 파싱 중 오류 발생: {e}")
                         continue
 
-                if not new_data_found:
-                    no_new_data_count += 1
-                    if no_new_data_count >= 3:
-                        print("3번 연속 새로운 리뷰 없음 → 크롤링 종료")
-                        break
-                else: 
-                    no_new_data_count =0 
-
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 scroll_count += 1
-                time.sleep(1.5)
+                time.sleep(2.5)
 
 
         self.driver.quit()
