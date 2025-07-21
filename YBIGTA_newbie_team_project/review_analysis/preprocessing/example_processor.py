@@ -7,7 +7,7 @@ from datetime import datetime
 class ExampleProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
-        self.df = pd.read_csv(self, input_path)
+        self.df = pd.read_csv(input_path)
 
     def preprocess(self):
         # 결측치 제거
