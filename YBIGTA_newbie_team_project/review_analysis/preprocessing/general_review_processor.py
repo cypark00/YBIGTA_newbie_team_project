@@ -2,14 +2,13 @@ from review_analysis.preprocessing.base_processor import BaseDataProcessor
 import pandas as pd
 import os
 import re
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from datetime import datetime
 
 class GeneralReviewProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
-        self.df = pd.read_csv(input_path)
-        self.site_name = os.path.splitext(os.path.basename(input_path))[0].replace("reviews_", "")
+        self.df = pd.read_csv(input_path , encoding='utf-8')
 
     def preprocess(self):
         # 결측치 제거
@@ -20,6 +19,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
 
         # 날짜 범위 이상치 제거
         today = datetime.today()
+        self.df["date"] = pd.to_datetime(self.df["date"])
         self.df = self.df[(self.df["date"] >= pd.Timestamp("2022-01-01")) & (self.df["date"] <= today)]
 
         # 특수문자 제거
@@ -36,8 +36,8 @@ class GeneralReviewProcessor(BaseDataProcessor):
         self.df.drop_duplicates(subset=["content"], inplace=True)
         
         # 리뷰 텍스트 임베딩
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.df["content_embedding"] = self.df["content"].apply(lambda x: model.encode(x).tolist())
+        # model = SentenceTransformer("all-MiniLM-L6-v2")
+        # self.df["content_embedding"] = self.df["review"].apply(lambda x: model.encode(x).tolist())
 
     
     def feature_engineering(self):
@@ -53,7 +53,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
 
 
     def save_to_database(self):
-        filename = f"preprocessed_reviews_{self.site_name}.csv"
+        filename = f"preprocessed_{os.path.basename(self.input_path)}"
         output_path = os.path.join(self.output_dir, filename)
         self.df.to_csv(output_path, index=False)
         print(f"[INFO] 저장 완료: {output_path}")
