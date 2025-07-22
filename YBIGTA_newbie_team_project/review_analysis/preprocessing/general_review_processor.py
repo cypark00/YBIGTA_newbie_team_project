@@ -3,8 +3,6 @@ import pandas as pd
 import os
 import re
 from sentence_transformers import SentenceTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 
 class GeneralReviewProcessor(BaseDataProcessor):
