@@ -55,7 +55,8 @@ class GeneralReviewProcessor(BaseDataProcessor):
         embeddings = model.encode(self.df["content"].tolist())
 
         # Add embeddings to DataFrame
-        self.df["embedding"] = list(embeddings)
+        import json
+        self.df["embedding"] = [json.dumps(vex.tolist()) for vex in embeddings]
 
     def feature_engineering(self):
         #날짜 -> 요일 파생 변수 생성 
