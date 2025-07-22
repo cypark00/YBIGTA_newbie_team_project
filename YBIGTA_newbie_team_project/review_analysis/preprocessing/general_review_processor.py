@@ -2,7 +2,7 @@ from review_analysis.preprocessing.base_processor import BaseDataProcessor
 import pandas as pd
 import os
 import re
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 from datetime import datetime
 
 class GeneralReviewProcessor(BaseDataProcessor):
@@ -41,10 +41,22 @@ class GeneralReviewProcessor(BaseDataProcessor):
         self.df.drop_duplicates(subset=["content"], inplace=True)
         
         # 리뷰 텍스트 임베딩
-        # model = SentenceTransformer("all-MiniLM-L6-v2")
-        # self.df["content_embedding"] = self.df["review"].apply(lambda x: model.encode(x).tolist())
+        # 텍스트 전처리 함수
+        def preprocess_text(text):
+            text = re.sub(r'[^\w\s]', '', text)
+            text = text.strip()
+            return text
 
-    
+        self.df["content"] = self.df["content"].apply(preprocess_text)
+
+        # Initialize the model
+        model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+        embeddings = model.encode(self.df["content"].tolist())
+
+        # Add embeddings to DataFrame
+        self.df["embedding"] = list(embeddings)
+
     def feature_engineering(self):
         #날짜 -> 요일 파생 변수 생성 
         import pandas as pd
