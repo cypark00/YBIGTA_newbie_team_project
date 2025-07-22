@@ -32,7 +32,7 @@ class GeneralReviewProcessor(BaseDataProcessor):
 
         # 리뷰 길이 제한
         self.df["review_length"] = self.df["content"].apply(len)
-        self.df = self.df[(self.df["review_length"] > 5) & (self.df["review_length"] < 1000)]
+        self.df = self.df[(self.df["review_length"] > 5) & (self.df["review_length"] < 250)]
 
         # 공백 문자열 제거
         self.df["content"] = self.df["content"].str.strip()
