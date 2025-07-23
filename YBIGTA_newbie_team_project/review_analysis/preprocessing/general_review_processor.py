@@ -2,8 +2,8 @@ from review_analysis.preprocessing.base_processor import BaseDataProcessor
 import pandas as pd
 import os
 import re
-from sentence_transformers import SentenceTransformer
 from datetime import datetime
+from transformers import BertTokenizer, TFBertModel
 
 class GeneralReviewProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
@@ -41,22 +41,26 @@ class GeneralReviewProcessor(BaseDataProcessor):
         self.df.drop_duplicates(subset=["content"], inplace=True)
         
         # 리뷰 텍스트 임베딩
-        # 텍스트 전처리 함수
-        def preprocess_text(text):
-            text = re.sub(r'[^\w\s]', '', text)
-            text = text.strip()
-            return text
+        tokenizer = BertTokenizer.from_pretrained('klue/bert-base')
+        model = TFBertModel.from_pretrained('klue/bert-base')
+        
+        self.df['tokenized_content'] = self.df['content'].apply(
+            lambda x: tokenizer.tokenize(x)[:250] if isinstance(x, str) else []
+        )
 
-        self.df["content"] = self.df["content"].apply(preprocess_text)
+        def get_bert_embedding(text):
+            inputs = tokenizer(text, return_tensors="tf", truncation=True, padding=True)
+            outputs = model(**inputs)
+            # [CLS] 토큰의 임베딩 (문장 전체 표현)
+            cls_embedding = outputs.last_hidden_state[:, 0, :]
+            return cls_embedding.numpy().flatten() 
 
-        # Initialize the model
-        model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        # content 컬럼에 대해 임베딩 적용
+        self.df["embedding"] = self.df["content"].apply(
+            lambda x: get_bert_embedding(x) if isinstance(x, str) else None
+        )
+            
 
-        embeddings = model.encode(self.df["content"].tolist())
-
-        # Add embeddings to DataFrame
-        import json
-        self.df["embedding"] = [json.dumps(vex.tolist()) for vex in embeddings]
 
     def feature_engineering(self):
         #날짜 -> 요일 파생 변수 생성 
