@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import re
 from datetime import datetime
-from transformers import BertTokenizer
+from transformers import BertTokenizer  # type: ignore[import-untyped]
 
 class TripDotComProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
