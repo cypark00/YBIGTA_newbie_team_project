@@ -8,41 +8,16 @@ YBIGTA 교육세션 1조입니다.
     - MBTI: ENFJ
     - 관심사: NLP에 가장 관심이 많고 최근에는 CV에 관심이 생겨 제대로 배워보려고 합니다.
 - 박채연
-
+    - 나이 : 03년생 
+    - 전공: 언더우드학부 경제학과 22
+    - MBTI: ISTJ
+    - 관심사: 운동, 최근에는 카페를 찾아다니며 일하거나 공부하는 시간을 즐기고 있습니다. 
 - 이지용
     - 나이: 01년생
     - 전공: 응용통계학과 21
     - MBTI: ISTP
     - 관심사: 운동(헬스, 축구, 농구 등등), 야구 보기, 국내 인디 음악 듣기
 
-## 크롤링 
-
-### 대상 사이트
-- KakaoMap 롯데월드 어드벤처  \
-https://place.map.kakao.com/27560699#comment
-- MyRealTrip 롯데월드 어드벤처 종합&파크이용권  \
-https://www.myrealtrip.com/offers/70816
-- Trip.com 롯데월드 어드벤처 \
-https://kr.trip.com/travel-guide/attraction/seoul/lotte-world-adventure-136469953/
-
-### 수집 데이터 개수 
-(별점, 리뷰 작성일, 리뷰 내용 포함 기준) 
-- KakaoMap: 500개
-- MyRealTrip: 625개
-- TripDotCom: 500개 
-
-### 데이터 형식
-- ‘rating’: 별점 (1~5점) 
-- ‘date’: 리뷰 작성일 
-- ‘content’: 리뷰 본문 내용 
- 
-
-### 저장 경로
-```
-database/reviews_kakaomap.csv
-database/reviews_myrealtrip.csv
-database/reviews_tripdotcom.csv`
-```
 
 ## 코드 실행 방법
 ### 의존성 설치
@@ -76,6 +51,36 @@ uvicorn app.main:app --reload
 # 단일 전처리 함수 실행
  python -m review_analysis.preprocessing.main -o database -c {reviews_kakaomap, reviews_myrealtrip, reviews_tripdotcom}
 ```
+
+
+## 크롤링 
+### 대상 사이트
+- KakaoMap 롯데월드 어드벤처  \
+https://place.map.kakao.com/27560699#comment
+- MyRealTrip 롯데월드 어드벤처 종합&파크이용권  \
+https://www.myrealtrip.com/offers/70816
+- Trip.com 롯데월드 어드벤처 \
+https://kr.trip.com/travel-guide/attraction/seoul/lotte-world-adventure-136469953/
+
+### 수집 데이터 개수 
+(별점, 리뷰 작성일, 리뷰 내용 포함 기준) 
+- KakaoMap: 500개
+- MyRealTrip: 625개
+- TripDotCom: 500개 
+
+### 데이터 형식
+- ‘rating’: 별점 (1~5점) 
+- ‘date’: 리뷰 작성일 
+- ‘content’: 리뷰 본문 내용 
+ 
+
+### 저장 경로
+```
+database/reviews_kakaomap.csv
+database/reviews_myrealtrip.csv
+database/reviews_tripdotcom.csv`
+```
+
 
 
 ## EDA
