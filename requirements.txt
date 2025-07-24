@@ -24,3 +24,8 @@ requests
 pandas
 pandas-stubs
 webdriver_manager
+numpy
+scikit-learn
+matplotlib
+seaborn
+pytest

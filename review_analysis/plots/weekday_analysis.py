@@ -6,7 +6,6 @@ files = [
     ("Trip.com", "database/preprocessed_reviews_tripdotcom.csv")
 ]
 
-dfs = [] 
 
 #site 정보 추가 
 df_list = []

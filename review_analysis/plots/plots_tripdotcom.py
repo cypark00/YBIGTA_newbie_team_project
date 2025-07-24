@@ -45,7 +45,7 @@ plt.close()
 ## 3. 날짜별 리뷰 수
 daily_counts = df["date"].value_counts().sort_index()
 plt.figure(figsize=(12, 6))
-plt.plot(daily_counts.index, daily_counts.values, marker='o', linestyle='-', color='blue')
+plt.plot(daily_counts.index.tolist(), daily_counts.values.tolist(), marker='o', linestyle='-', color='blue')
 plt.title("Daily Review Counts")
 plt.xlabel("Date")
 plt.ylabel("Number of Reviews")
