@@ -32,12 +32,39 @@ database/reviews_myrealtrip.csv
 database/reviews_tripdotcom.csv`
 ```
 
-## 실행 방법
-### 모든 크롤러 한번에 실행
-> python -m review_analysis.crawling.main -o database -a
+## 코드 실행 방법
+### 의존성 설치
+```
+pip install -r requirements.txt
+```
 
-### 단일 크롤러 실행 
-> python -m review_analysis.crawling.main -o database -c {KakaoMap, MyRealTrip, TripDotCom}
+### Web
+```
+uvicorn app.main:app --reload
+```
+실행 후,
+[http://127.0.0.1:8000/static/index.html](http://127.0.0.1:8000/static/index.html) 로 진입
+
+### 크롤러
+```
+# 모든 크롤러 한번에 실행
+ python -m review_analysis.crawling.main -o database -a
+```
+```
+# 단일 크롤러 실행
+ python -m review_analysis.crawling.main -o database -c {KakaoMap, MyRealTrip, TripDotCom}
+```
+
+### 전처리
+```
+# 모든 전처리 함수 한번에 실행
+ python -m review_analysis.preprocessing.main -o database -a
+```
+```
+# 단일 전처리 함수 실행
+ python -m review_analysis.preprocessing.main -o database -c {reviews_kakaomap, reviews_myrealtrip, reviews_tripdotcom}
+```
+
 
 ## EDA
 ### Kakaomap 
@@ -193,16 +220,6 @@ database/reviews_tripdotcom.csv`
 
 ![Alt text](/review_analysis/plots/weekday_avg_length.png)
 
-### 시각화 이미지 저장 경로
-```
-YBIGTA_newbie_team_project/
-└── review_analysis/
-    └── plots/
-        ├── weekday_review_count.png
-        ├── weekday_avg_rating.png
-        └── weekday_avg_length.png
-```
-
 ## 비교분석 (텍스트 기반)
 - 본 분석에서는 KakaoMap, MyRealTrip, TripDotcom 세 사이트에서의 콘텐츠를 기반으로 상위 키워드의 빈도수를 비교하고, 각 플랫폼의 키워드 특성을 시각적으로 분석하였음.
 ### 사이트별 상위 키워드 등장 횟수
@@ -219,3 +236,14 @@ YBIGTA_newbie_team_project/
 - TripDotcom: 놀이기구, 아이, 가족, 추천 등 가족 단위 방문자와 체험 중심 키워드 다수.
 
 ![Alt text](/review_analysis/plots/비교분석_wordcloud.png)
+
+## GIT 과제 이미지 첨부
+- Branch protection
+
+![Alt text](/github/branch_protection.png)
+- Push rejected
+
+![Alt text](/github/push_rejected.png)
+- Review and merged
+
+![Alt text](/github/review_and_merged.png)
