@@ -44,6 +44,73 @@ python -m review_analysis.crawling.main -o database -c KakaoMap
 - 이상치 개수: 50개 
 - 이상치 비율 : 10% 
 
+# MyRealTrip 리뷰 크롤링 
+
+## 크롤링 대상 사이트
+- MyRealTrip 롯데월드 어드벤처 종합&파크이용권 : https://www.myrealtrip.com/offers/70816
+
+## 수집 데이터 개수
+- 총 625개 ( 별점, 리뷰 작성일, 리뷰 내용 포함 기준) 
+
+## 데이터 형식
+- ‘rating’: 별점 (1~5점) 
+- ‘date’: 리뷰 작성일 
+- ‘content’: 리뷰 본문 내용 
+ 
+
+## 저장 경로 
+- database/reviews_myrealtrip.csv`
+
+# 실행 방법 
+### 단일 크롤러 실행 
+- 아래 명령어를 통해 **MyRealTrip 크롤러 실행** 이 가능합니다:  
+python -m review_analysis.crawling.main -o database -c MyRealTrip
+
+
+
+# MyRealTrip EDA 
+## Rating distribution 
+- 특징
+    - 5점(약 90.4%)이 대부분이었고, 5점>4점>3점>1점>2점 순으로 나타났음.
+
+- 이상치
+    - 1~5점을 벗어난 리뷰는 없었음.
+
+![Alt text](/review_analysis/plots/myrealtrip_rating_dist.png)
+
+
+## Text length distribution
+
+- 특징
+    - 텍스트 길이는 전반적으로 짧은 편이며, 13(Q1)에서 31(Q3) 구간에 리뷰의 절반이 집중됨. 
+    ![Alt text](/review_analysis/plots/myrealtrip_text_length_dist.png)
+    - 낮은 평점(1점)일 때 리뷰의 평균 길이가 가장 길었음(불만이 많을수록 상세히 설명하는 경향).
+    ![Alt text](/review_analysis/plots/myrealtrip_text_length_box_by_rating.png)
+
+
+- 이상치:
+    - 3자 미만: 유의미한 내용이 담기기 어려운 짧은 리뷰로 분류
+    - 58자 초과: IQR 기반 상위 이상치로 간주할 수 있음
+    - 이상치 비율: 전체 리뷰의 약 **5.20%**가 기준을 초과
+
+![Alt text](/review_analysis/plots/myrealtrip_text_length_box.png)
+
+
+## Date distribution 
+- 특징
+    - 연도별: 대부분의 데이터는 2024년과 2025년에 집중되어 있으며, 2023년 데이터는 매우 소수
+
+    - 월별: 1월~3월에 리뷰가 가장 많고, 이후 점차 감소, 10월~11월은 데이터가 현저히 적음
+
+    - 요일별: 월요일에 리뷰가 집중적으로 발생함 (다른 요일 대비 뚜렷하게 높음), 그 외 요일은 비교적 고르게 분포
+
+    - 일별: 1~5일에 작성된 리뷰 비율이 특히 높고, 특히 3일에 집중됨, 중순(11일~20일)에는 비교적 적은 수의 리뷰
+- 이상치
+    - 기준: 2022년 1월 이전 또는 오늘 날짜 이후
+    - 개수: 0개
+
+![Alt text](/review_analysis/plots/myrealtrip_date_dist.png)
+
 
 
 
@@ -88,15 +155,18 @@ python - m review_analysis.crawling.main -o database -c TripDotCom
 4. Weekday Distribution (요일별 리뷰 수)
 - 특징: 주중에 리뷰가 더 많으며 주말에는 리뷰 수가 감소하는 경향이 있음.
 
-5. 시각화 이미지 저장 경로
-YBIGTA_newbie_team_project/
-└── review_analysis/
-    └── plots/
-        ├── tripdotcom_daily_review_counts.png
-        ├── tripdotcom_rating_distribution.png
-        ├── tripdotcom_review_length_boxplot.png
-        ├── tripdotcom_review_length_distribution.png
-        └── tripdotcom_weekday_review_counts.png
+5. 시각화 이미지 저장 경로 
+
+```
+YBIGTA_newbie_team_project/ 
+└── review_analysis/ 
+    └── plots/ 
+        ├── tripdotcom_daily_review_counts.png 
+        ├── tripdotcom_rating_distribution.png 
+        ├── tripdotcom_review_length_boxplot.png 
+        ├── tripdotcom_review_length_distribution.png 
+        └── tripdotcom_weekday_review_counts.png 
+```
 
 # TripDotCom 리뷰 데이터 전처리 및 Feature Engineering
 1. 결측치 처리
@@ -117,7 +187,11 @@ YBIGTA_newbie_team_project/
 - weekday: 날짜(date)로부터 요일을 추출하여 요일별 분석이 가능하도록 파생변수 생성
 - text_length: 리뷰 텍스트의 글자 수를 측정하여 text_length 변수로 저장
 
-
+5. 토큰화 & 임베딩
+- klue/bert-base 토크나이저와 모델을 불러와 임베딩 생성 준비
+- 리뷰 텍스트를 최대 250개 토큰으로 제한하여 토큰화 진행
+- [CLS] 토큰 임베딩을 문장 표현으로 추출 후 벡터화
+- 각 리뷰에 대해 임베딩을 계산해 embedding 컬럼에 저장
 
 
 # 비교분석 (시계열 기반)
@@ -136,9 +210,11 @@ YBIGTA_newbie_team_project/
 - Trip.com 사이트의 경우 평균 텍스트 길이가 수요일에 가장 긴 경향을 보임.
 
 ## 시각화 이미지 저장 경로
+```
 YBIGTA_newbie_team_project/
 └── review_analysis/
     └── plots/
         ├── weekday_review_count.png
         ├── weekday_avg_rating.png
         └── weekday_avg_length.png
+```
