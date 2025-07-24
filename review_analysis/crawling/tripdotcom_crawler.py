@@ -27,7 +27,7 @@ class TripDotComCrawler(BaseCrawler):
         super().__init__(output_dir)
         self.logger = setup_logger('trip_crawler.log')
         self.base_url = 'https://kr.trip.com/travel-guide/attraction/seoul/lotte-world-adventure-136469953/'
-        self.reviews = []
+        self.reviews: list[dict] = []
 
     def start_browser(self):
         """
