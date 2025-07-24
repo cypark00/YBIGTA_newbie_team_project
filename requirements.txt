@@ -18,3 +18,8 @@ tomli==2.2.1
 typing_extensions==4.12.2
 uvicorn==0.34.0
 transformers==4.48.2
+selenium
+bs4
+requests
+pandas
+webdriver_manager

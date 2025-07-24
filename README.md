@@ -1,16 +1,28 @@
-# 1조
-팀소개
+# YBIGTA 1조
+YBIGTA 교육세션 1조입니다.  
+'롯데월드' 리뷰 데이터를 이용하여, 크롤링, EDA 및 전처리, 분석, 시각화에 이르기까지 전 과정을 진행해보았습니다.
 ## 팀원 소개
-김서정 \
-박채연 \
-이지용
+- 김서정
+    - 나이: 04년생
+    - 전공: 인공지능학과 23
+    - MBTI: ENFJ
+    - 관심사: NLP에 가장 관심이 많고 최근에는 CV에 관심이 생겨 제대로 배워보려고 합니다.
+- 박채연
+
+- 이지용
+    - 나이: 01년생
+    - 전공: 응용통계학과 21
+    - MBTI: ISTP
+    - 관심사: 운동(헬스, 축구, 농구 등등), 야구 보기, 국내 인디 음악 듣기
 
 ## 크롤링 
 
 ### 대상 사이트
-- KakaoMap 롯데월드 어드벤처 : https://place.map.kakao.com/27560699#comment
-- MyRealTrip 롯데월드 어드벤처 종합&파크이용권 : https://www.myrealtrip.com/offers/70816
-- Trip.com 롯데월드 어드벤처
+- KakaoMap 롯데월드 어드벤처  \
+https://place.map.kakao.com/27560699#comment
+- MyRealTrip 롯데월드 어드벤처 종합&파크이용권  \
+https://www.myrealtrip.com/offers/70816
+- Trip.com 롯데월드 어드벤처 \
 https://kr.trip.com/travel-guide/attraction/seoul/lotte-world-adventure-136469953/
 
 ### 수집 데이터 개수 
