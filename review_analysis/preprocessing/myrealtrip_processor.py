@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import re
 from datetime import datetime
-from transformers import BertTokenizer, TFBertModel
+from transformers import BertTokenizer
 
 class MyRealTripProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
@@ -40,25 +40,12 @@ class MyRealTripProcessor(BaseDataProcessor):
         # 중복 리뷰 제거
         self.df.drop_duplicates(subset=["content"], inplace=True)
         
-        # 리뷰 텍스트 임베딩
+        # 리뷰 텍스트 토큰화
         tokenizer = BertTokenizer.from_pretrained('klue/bert-base')
-        model = TFBertModel.from_pretrained('klue/bert-base')
-        
         self.df['tokenized_content'] = self.df['content'].apply(
             lambda x: tokenizer.tokenize(x)[:250] if isinstance(x, str) else []
         )
 
-        def get_bert_embedding(text):
-            inputs = tokenizer(text, return_tensors="tf", truncation=True, padding=True)
-            outputs = model(**inputs)
-            # [CLS] 토큰의 임베딩 (문장 전체 표현)
-            cls_embedding = outputs.last_hidden_state[:, 0, :]
-            return cls_embedding.numpy().flatten() 
-
-        # content 컬럼에 대해 임베딩 적용
-        self.df["embedding"] = self.df["content"].apply(
-            lambda x: get_bert_embedding(x) if isinstance(x, str) else None
-        )
             
 
 

@@ -1,16 +1,28 @@
-# 1조
-팀소개
+# YBIGTA 1조
+YBIGTA 교육세션 1조입니다.  
+'롯데월드' 리뷰 데이터를 이용하여, 크롤링, EDA 및 전처리, 분석, 시각화에 이르기까지 전 과정을 진행해보았습니다.
 ## 팀원 소개
-김서정 \
-박채연 \
-이지용
+- 김서정
+    - 나이: 04년생
+    - 전공: 인공지능학과 23
+    - MBTI: ENFJ
+    - 관심사: NLP에 가장 관심이 많고 최근에는 CV에 관심이 생겨 제대로 배워보려고 합니다.
+- 박채연
+
+- 이지용
+    - 나이: 01년생
+    - 전공: 응용통계학과 21
+    - MBTI: ISTP
+    - 관심사: 운동(헬스, 축구, 농구 등등), 야구 보기, 국내 인디 음악 듣기
 
 ## 크롤링 
 
 ### 대상 사이트
-- KakaoMap 롯데월드 어드벤처 : https://place.map.kakao.com/27560699#comment
-- MyRealTrip 롯데월드 어드벤처 종합&파크이용권 : https://www.myrealtrip.com/offers/70816
-- Trip.com 롯데월드 어드벤처
+- KakaoMap 롯데월드 어드벤처  \
+https://place.map.kakao.com/27560699#comment
+- MyRealTrip 롯데월드 어드벤처 종합&파크이용권  \
+https://www.myrealtrip.com/offers/70816
+- Trip.com 롯데월드 어드벤처 \
 https://kr.trip.com/travel-guide/attraction/seoul/lotte-world-adventure-136469953/
 
 ### 수집 데이터 개수 
@@ -32,12 +44,39 @@ database/reviews_myrealtrip.csv
 database/reviews_tripdotcom.csv`
 ```
 
-## 실행 방법
-### 모든 크롤러 한번에 실행
-> python -m review_analysis.crawling.main -o database -a
+## 코드 실행 방법
+### 의존성 설치
+```
+pip install -r requirements.txt
+```
 
-### 단일 크롤러 실행 
-> python -m review_analysis.crawling.main -o database -c {KakaoMap, MyRealTrip, TripDotCom}
+### Web
+```
+uvicorn app.main:app --reload
+```
+실행 후,
+[http://127.0.0.1:8000/static/index.html](http://127.0.0.1:8000/static/index.html) 로 진입
+
+### 크롤러
+```
+# 모든 크롤러 한번에 실행
+ python -m review_analysis.crawling.main -o database -a
+```
+```
+# 단일 크롤러 실행
+ python -m review_analysis.crawling.main -o database -c {KakaoMap, MyRealTrip, TripDotCom}
+```
+
+### 전처리
+```
+# 모든 전처리 함수 한번에 실행
+ python -m review_analysis.preprocessing.main -o database -a
+```
+```
+# 단일 전처리 함수 실행
+ python -m review_analysis.preprocessing.main -o database -c {reviews_kakaomap, reviews_myrealtrip, reviews_tripdotcom}
+```
+
 
 ## EDA
 ### Kakaomap 
@@ -103,11 +142,11 @@ database/reviews_tripdotcom.csv`
 - 특징
     - 연도별: 대부분의 데이터는 2024년과 2025년에 집중되어 있으며, 2023년 데이터는 매우 소수
 
-    - 월별: 1월~3월에 리뷰가 가장 많고, 이후 점차 감소, 10월~11월은 데이터가 현저히 적음
+    - 월별: 1월\~3월에 리뷰가 가장 많고, 이후 점차 감소, 10월\~11월은 데이터가 현저히 적음
 
     - 요일별: 월요일에 리뷰가 집중적으로 발생함 (다른 요일 대비 뚜렷하게 높음), 그 외 요일은 비교적 고르게 분포
 
-    - 일별: 1~5일에 작성된 리뷰 비율이 특히 높고, 특히 3일에 집중됨, 중순(11일~20일)에는 비교적 적은 수의 리뷰
+    - 일별: 1\~5일에 작성된 리뷰 비율이 특히 높고, 특히 3일에 집중됨, 중순(11일\~20일)에는 비교적 적은 수의 리뷰
 - 이상치
     - 기준: 2022년 1월 이전 또는 오늘 날짜 이후
     - 개수: 0개
@@ -193,16 +232,6 @@ database/reviews_tripdotcom.csv`
 
 ![Alt text](/review_analysis/plots/weekday_avg_length.png)
 
-### 시각화 이미지 저장 경로
-```
-YBIGTA_newbie_team_project/
-└── review_analysis/
-    └── plots/
-        ├── weekday_review_count.png
-        ├── weekday_avg_rating.png
-        └── weekday_avg_length.png
-```
-
 ## 비교분석 (텍스트 기반)
 - 본 분석에서는 KakaoMap, MyRealTrip, TripDotcom 세 사이트에서의 콘텐츠를 기반으로 상위 키워드의 빈도수를 비교하고, 각 플랫폼의 키워드 특성을 시각적으로 분석하였음.
 ### 사이트별 상위 키워드 등장 횟수
@@ -219,3 +248,14 @@ YBIGTA_newbie_team_project/
 - TripDotcom: 놀이기구, 아이, 가족, 추천 등 가족 단위 방문자와 체험 중심 키워드 다수.
 
 ![Alt text](/review_analysis/plots/비교분석_wordcloud.png)
+
+## GIT 과제 이미지 첨부
+- Branch protection
+
+![Alt text](/github/branch_protection.png)
+- Push rejected
+
+![Alt text](/github/push_rejected.png)
+- Review and merged
+
+![Alt text](/github/review_and_merged.png)
