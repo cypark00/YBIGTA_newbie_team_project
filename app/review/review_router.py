@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import Any, Dict, List, Union
 import pandas as pd
-import tempfile
-import os
-from contextlib import contextmanager
 
 from database.mongodb_connection import mongo_db
 from app.responses.base_response import BaseResponse
@@ -19,38 +16,6 @@ SITE_PROCESSORS = {
     "myrealtrip": MyRealTripProcessor,
     "tripdotcom": TripDotComProcessor,
 }
-
-@contextmanager
-def temporary_files(*suffixes):
-    """Context manager for handling temporary files with automatic cleanup."""
-    temp_files = []
-    try:
-        for suffix in suffixes:
-            if suffix.endswith('.csv'):
-                # For CSV files, create with text mode and encoding
-                temp_file = tempfile.NamedTemporaryFile(
-                    mode="w+",
-                    suffix=suffix, 
-                    delete=False, 
-                    encoding="utf-8"
-                )
-            else:
-                # For other files, create in binary mode without encoding
-                temp_file = tempfile.NamedTemporaryFile(
-                    suffix=suffix, 
-                    delete=False
-                )
-            temp_files.append(temp_file.name)
-            temp_file.close()  # Close file handle but keep the file
-        yield temp_files
-    finally:
-        # Clean up temporary files
-        for temp_file in temp_files:
-            try:
-                if os.path.exists(temp_file):
-                    os.unlink(temp_file)
-            except OSError:
-                pass
 
 def validate_site_name(site_name: str) -> str:
     """Validate and normalize site name."""
@@ -84,29 +49,6 @@ def fetch_review_data(collection_name: str) -> pd.DataFrame:
         raise HTTPException(
             status_code=500,
             detail=f"Database error while fetching review data: {str(e)}"
-        )
-
-def save_dataframe_to_csv(df: pd.DataFrame, file_path: str) -> None:
-    """Save DataFrame to CSV file."""
-    try:
-        df.to_csv(file_path, index=False, encoding="utf-8")
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error saving data to temporary file: {str(e)}"
-        )
-
-def process_reviews(processor_class, input_path: str, output_path: str) -> pd.DataFrame:
-    """Process reviews using the specified processor."""
-    try:
-        processor = processor_class(input_path=input_path, output_path=output_path)
-        processor.preprocess()
-        processor.feature_engineering()
-        return processor.df
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error during review processing: {str(e)}"
         )
 
 def save_processed_data(processed_data: List[Dict[str, Any]], collection_name: str) -> None:
@@ -148,34 +90,33 @@ def preprocess_review(site_name: str) -> BaseResponse:
     target_collection = f"preprocessed_reviews_{site_name}"
     
     try:
-        # Fetch data from MongoDB
+        # Fetch data from MongoDB and convert to DataFrame
         df = fetch_review_data(source_collection)
         
-        # Use temporary files with automatic cleanup
-        with temporary_files(".csv", "_out.csv") as (input_path, output_path):
-            # Save DataFrame to temporary CSV
-            save_dataframe_to_csv(df, input_path)
-            
-            # Get processor class and process reviews
-            processor_class = SITE_PROCESSORS[site_name]
-            processed_df = process_reviews(processor_class, input_path, output_path)
-            
-            # Convert processed DataFrame to records
-            processed_data = processed_df.to_dict(orient="records")
-            
-            # Save processed data to MongoDB
-            save_processed_data(processed_data, target_collection)
-            
-            return BaseResponse(
-                status="success",
-                data={
-                    "processed_count": len(processed_data),
-                    "site_name": site_name,
-                    "source_collection": source_collection,
-                    "target_collection": target_collection
-                },
-                message=f"Review preprocessing completed successfully for {site_name}. Processed {len(processed_data)} records."
-            )
+        # Get processor class and process reviews directly with DataFrame
+        processor_class = SITE_PROCESSORS[site_name]
+        processor = processor_class(dataframe=df)
+        
+        # Process the data
+        processor.preprocess()
+        processor.feature_engineering()
+        
+        # Convert processed DataFrame to records
+        processed_data = processor.df.to_dict(orient="records")
+        
+        # Save processed data to MongoDB
+        save_processed_data(processed_data, target_collection)
+        
+        return BaseResponse(
+            status="success",
+            data={
+                "processed_count": len(processed_data),
+                "site_name": site_name,
+                "source_collection": source_collection,
+                "target_collection": target_collection
+            },
+            message=f"Review preprocessing completed successfully for {site_name}. Processed {len(processed_data)} records."
+        )
             
     except HTTPException:
         raise

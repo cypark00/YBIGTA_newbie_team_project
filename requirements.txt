@@ -32,4 +32,5 @@ scikit-learn
 matplotlib
 seaborn
 pytest
+torch
 pymongo

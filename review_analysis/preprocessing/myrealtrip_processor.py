@@ -6,9 +6,14 @@ from datetime import datetime
 from transformers import BertTokenizer  # type: ignore[import-untyped]
 
 class MyRealTripProcessor(BaseDataProcessor):
-    def __init__(self, input_path: str, output_path: str):
+    def __init__(self, input_path: str = None, output_path: str = None, dataframe: pd.DataFrame = None):
         super().__init__(input_path, output_path)
-        self.df = pd.read_csv(input_path, encoding='utf-8')
+        
+        # DataFrame이 직접 제공된 경우 사용, 아니면 CSV에서 읽기
+        if dataframe is not None:
+            self.df = dataframe.copy()
+        else:
+            self.df = pd.read_csv(input_path, encoding='utf-8')
 
     def preprocess(self):
         # 컬럼 남기기
