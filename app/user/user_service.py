@@ -47,8 +47,8 @@ class UserService:
         
         self.repo.save_user(new_user)
         return new_user
-    
-    def delete_user(self, user_delete: UserDeleteRequest) -> User:
+
+    def delete_user(self, email: str) -> User:
         '''
         사용자 삭제
         Args:
@@ -59,7 +59,7 @@ class UserService:
         Raises:
             ValueError: 해당 이메일의 사용자가 존재하지 않을 경우
         ''' 
-        user = self.repo.get_user_by_email(user_delete.email)
+        user = self.repo.get_user_by_email(email)
         if not user:
             raise ValueError("User not Found.")
         delete_user = self.repo.delete_user(user)
