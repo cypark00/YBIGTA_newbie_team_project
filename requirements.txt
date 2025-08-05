@@ -21,16 +21,17 @@ tomli==2.2.1
 typing_extensions==4.12.2
 uvicorn==0.34.0
 transformers==4.48.2
+torch==2.2.2+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
 selenium
 bs4
 requests
 pandas
 pandas-stubs
 webdriver_manager
-numpy
+numpy<2
 scikit-learn
 matplotlib
 seaborn
 pytest
-torch
 pymongo
