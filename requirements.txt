@@ -33,5 +33,6 @@ numpy<2
 scikit-learn
 matplotlib
 seaborn
+httpx
 pytest
 pymongo
