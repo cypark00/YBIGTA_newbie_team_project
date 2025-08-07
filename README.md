@@ -290,3 +290,8 @@ database/reviews_tripdotcom.csv`
 - 리뷰 전처리 API 
   
   ![](aws/preprocess.png)
+
+  ## Github actions 결과 
+  ![](aws/github_action.png)
+
+
