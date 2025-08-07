@@ -267,22 +267,22 @@ database/reviews_tripdotcom.csv`
 
 ## API 실행 결과 캡처
 
-- 회원가입 API (`/api/user/register`)
+- 회원가입 API 
   
-  ![](register.png)
+  ![](aws/register.png)
 
-- 로그인 API (`/api/user/login`)
+- 로그인 API 
   
-  ![](login.png)
+  ![](aws/login.png)
 
-- 비밀번호 변경 API (`/api/user/update-password`)
+- 비밀번호 변경 API 
   
-  ![](update-password.png)
+  ![](aws/update-password.png)
 
-- 회원 삭제 API (`/api/user/delete`)
+- 회원 삭제 API 
   
-  ![](delete.png)
+  ![](aws/delete.png)
 
-- 리뷰 전처리 API (`/api/review/preprocess/{site_name}`)
+- 리뷰 전처리 API 
   
-  ![](preprocess.png)
+  ![](aws/preprocess.png)
