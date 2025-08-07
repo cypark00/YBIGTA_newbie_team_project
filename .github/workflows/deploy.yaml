@@ -17,13 +17,13 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/your-image-name .
+        run: docker build -t ${{ secrets.DOCKER_IMAGE }} .
 
       - name: Push to DockerHub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/your-image-name
+        run: docker push ${{ secrets.DOCKER_IMAGE }}
 
   Deploy-to-EC2:
-    name: Deploy to EC2 DB, Docker, AWS 과제 3
+    name: Deploy to EC2
     needs: Build-and-Push-Docker-Image
     runs-on: ubuntu-latest
 
@@ -32,9 +32,9 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/your-image-name
+            docker pull ${{ secrets.DOCKER_IMAGE }}
             docker stop app || true && docker rm app || true
-            docker run -d --name app -p 8000:8000 --env-file .env ${{ secrets.DOCKER_USERNAME }}/your-image-name
+            docker run -d --name app -p 8000:8000 ${{ secrets.DOCKER_IMAGE }}
