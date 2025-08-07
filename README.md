@@ -265,6 +265,10 @@ database/reviews_tripdotcom.csv`
 
 ![Alt text](/github/review_and_merged.png)
 
+## Docker Hub
+
+- [Docker Image 링크](https://hub.docker.com/r/jiyongleex/aws-db-docker)
+
 ## API 실행 결과 캡처
 
 - 회원가입 API 
