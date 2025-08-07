@@ -264,3 +264,25 @@ database/reviews_tripdotcom.csv`
 - Review and merged
 
 ![Alt text](/github/review_and_merged.png)
+
+## API 실행 결과 캡처
+
+- 회원가입 API (`/api/user/register`)
+  
+  ![](register.png)
+
+- 로그인 API (`/api/user/login`)
+  
+  ![](login.png)
+
+- 비밀번호 변경 API (`/api/user/update-password`)
+  
+  ![](update-password.png)
+
+- 회원 삭제 API (`/api/user/delete`)
+  
+  ![](delete.png)
+
+- 리뷰 전처리 API (`/api/review/preprocess/{site_name}`)
+  
+  ![](preprocess.png)
