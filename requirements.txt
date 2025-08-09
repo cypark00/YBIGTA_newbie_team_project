@@ -36,3 +36,13 @@ seaborn
 httpx
 pytest
 pymongo
+# LangChain 및 RAG 관련 패키지
+langchain>=0.1.0
+langchain-upstage
+langchain-community
+langgraph>=0.1.0
+# Streamlit 관련 패키지  
+streamlit>=1.28.0
+# Vector DB 및 임베딩 관련
+faiss-cpu
+sentence-transformers
