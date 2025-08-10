@@ -5,7 +5,7 @@ Upstage API를 활용한 LLM 인스턴스 생성 및 관리
 from typing import Optional, List, Dict, Any
 import os
 from langchain_upstage import ChatUpstage
-from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
 
 def get_upstage_llm(
@@ -130,3 +130,18 @@ def get_llm_response_sync(
         return response.content
     except Exception as e:
         return f"LLM 응답 생성 중 오류가 발생했습니다: {str(e)}"
+
+def get_chat_llm(
+    model_upstage: str = "solar-pro",
+    temperature: float = 0.2
+):
+    """
+    공용 팩토리: Upstage가 있으면 Upstage, 없으면 OpenAI로 폴백.
+    RAG 체인(LCEL)에 바로 연결 가능.
+    """
+    try:
+        return get_upstage_llm(model=model_upstage, temperature=temperature)
+    except Exception:
+        # 폴백(OpenAI 등) — 없으면 주석 처리해도 됨
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(model="gpt-4o-mini", temperature=temperature)
