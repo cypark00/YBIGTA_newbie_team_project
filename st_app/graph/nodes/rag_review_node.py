@@ -63,7 +63,6 @@ def _format_context(docs_with_scores: List[Tuple[Document, float]]) -> str:
     parts = []
     for i, (doc, score) in enumerate(docs_with_scores):
         parts.append(
-            f"[Review {i+1}]\n"
             f"{doc.page_content}\n"
             f"(source: {_short_src(doc.metadata)}, similarity: {score:.3f})"
         )
