@@ -295,3 +295,50 @@ database/reviews_tripdotcom.csv`
   ![](aws/github_action.png)
 
 
+## streamlit cloud 주소 및 작동 화면 
+https://ybigtanewbieteamproject-ijeqvuveezmdhtx5dp3ikj.streamlit.app/
+
+## state class 구현 방식
+- `state.py`에서 대화 흐름의 **모든 상태 정보**를 하나의 `State` 클래스(TypedDict 기반)에 저장·관리.
+- **구조**
+  - 대화 입력(`user_input`), 라우팅 결과(`routing_decision`), 현재 노드(`current_node`) 등 **대화 제어 변수**
+  - 노드별 처리 결과 저장:
+    - `subject_info_node` : 카테고리 감지(`detected_category`), 주제명 추출(`extracted_subject`), 데이터 소스(`data_source`) 등
+    - `rag_review_node` : 리뷰 검색 쿼리(`review_query`), 검색 결과(`retrieved_reviews`), 리뷰 요약(`review_summary`), 감정 분석(`sentiment_analysis`), RAG 컨텍스트(`rag_context`) 등
+  - 성능 측정 : `retrieval_latency_ms`에 RAG 검색 시간(ms) 기록
+- **동작 방식**
+  1. `create_initial_state()`에서 초기 상태를 생성 (빈 리스트/None 기본값으로 안전한 시작)
+  2. 사용자가 입력하면 `user_input`과 대화 기록(`conversation_history`)에 저장
+  3. 각 노드에서 처리된 결과는 해당 필드에 기록되어, 이후 단계에서 재사용 가능
+  4. RAG 검색 과정 시작/종료 시 `mark_retrieval_start()`·`mark_retrieval_end()`로 소요 시간 저장
+  5. 모든 상태 정보는 세션 단위로 유지되어, 한 대화 흐름 안에서 데이터 일관성을 보장
+  
+  ### State 데이터 구조 요약
+
+| 구분 | 변수명 | 역할 |
+|------|--------|------|
+| **대화 입력** | `user_input` | 사용자 입력 원문 |
+| **대화 기록** | `conversation_history` | 이전 질의·응답 누적 저장 |
+| **라우팅 정보** | `routing_decision` | LLM이 판단한 다음 실행 노드 |
+| **현재 위치** | `current_node` | 현재 실행 중인 노드 이름 |
+| **주제 정보** | `detected_category`, `extracted_subject`, `info_type`, `data_source` | 주제 카테고리, 추출된 주제명, 정보 유형, 데이터 출처 |
+| **RAG 검색 결과** | `review_query`, `retrieved_reviews`, `rag_context` | 리뷰 검색 쿼리, 검색된 리뷰 리스트, RAG 컨텍스트 |
+| **RAG 처리 결과** | `review_summary`, `sentiment_analysis` | 리뷰 요약, 감정 분석 결과 |
+| **성능 측정** | `retrieval_latency_ms` | RAG 검색 소요 시간(ms) |
+
+
+## 조건부 라우팅 구현 방식
+- `router.py`에서 LangGraph의 `StateGraph`를 이용해 **대화 의도에 따라 실행 노드를 동적으로 선택**.
+- **구현 절차**
+  1. START 지점에서 `direct_router()` 실행
+  2. `direct_router()`는 LLM(`get_upstage_llm`)을 호출해 입력 문장의 의도를 JSON 형식으로 분류  
+     - 예: `{"intent": "rag_review"}` 또는 `{"intent": "subject_info"}`
+  3. JSON 파싱 실패 시, 키워드 매칭 기반 폴백 로직 수행  
+     - 리뷰·추천 관련 → `"rag_review"`  
+     - 위치·가격·운영시간 관련 → `"subject_info"`  
+     - 기타 → `"chat"`
+  4. 선택된 노드(chat, subject_info, rag_review) 실행 후 END로 종료
+- **그래프 구성**
+  - `graph.add_node()`로 각 기능 노드 등록
+  - `graph.add_conditional_edges(START, direct_router, {...})`로 의도에 따른 분기 정의
+  - 모든 노드는 처리 후 `END`로 연결되어 대화 종료 또는 다음 입력 대기
