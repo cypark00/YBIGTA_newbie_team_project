@@ -1,8 +1,10 @@
 import json
 import re
 from typing import Dict, Any, List, Optional
-from streamlit_app import State, llm
+from st_app.utils.state import State
+from st_app.rag.llm import get_upstage_llm
 import os
+from st_app.rag.prompt import get_subject_info_prompt
 
 class SubjectInfoProcessor:
     """리뷰 대상 정보 처리를 위한 클래스"""
@@ -11,9 +13,12 @@ class SubjectInfoProcessor:
         self.subject_data = self.load_subject_data()
     
     def load_subject_data(self) -> List[Dict]:
-        """subject.json 파일 로드"""
+        """subjects.json 파일 로드"""
         try:
-            file_path = "../subject_information/subject.json"
+            # 현재 파일의 위치를 기준으로 상대 경로 계산
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(current_dir, "..", "..", "db", "subject_information", "subjects.json")
+            
             if os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
@@ -58,7 +63,7 @@ class SubjectInfoProcessor:
         
         # 2. 카테고리별 키워드 검색
         category_keywords = {
-            "테마파크": ["테마파크", "놀이공원", "롯데월드", "어트랙션", "놀이기구"],
+            "테마파크": ["테마파크", "놀이공원", "롯데월드", "어트랙션", "놀이기구", "어드벤처", "매직아일랜드"],
             "관광지": ["관광지", "여행지", "명소"],
             "레스토랑": ["레스토랑", "맛집", "음식점"],
             "호텔": ["호텔", "숙박", "리조트"]
@@ -97,7 +102,7 @@ class SubjectInfoProcessor:
         return ' '.join(filtered_words) if filtered_words else user_input
 
 def format_subject_info(subject_data: Dict) -> str:
-    """주제 데이터를 포맷된 문자열로 변환 - 업데이트된 JSON 구조 반영"""
+    """주제 데이터를 포맷된 문자열로 변환 - 새로운 JSON 구조 반영"""
     
     info_parts = []
     
@@ -107,6 +112,17 @@ def format_subject_info(subject_data: Dict) -> str:
     
     if 'location' in subject_data:
         info_parts.append(f"**위치**: {subject_data['location']}")
+    
+    # 교통편 정보
+    if 'transportation' in subject_data:
+        info_parts.append(f"\n**교통편**")
+        transport = subject_data['transportation']
+        if 'subway' in transport:
+            info_parts.append(f"🚇 **지하철**: {transport['subway']}")
+        if 'bus' in transport:
+            info_parts.append(f"🚌 **버스**: {transport['bus']}")
+        if 'parking' in transport:
+            info_parts.append(f"🅿️ **주차**: {transport['parking']}")
     
     # 설명
     if 'description' in subject_data:
@@ -120,7 +136,29 @@ def format_subject_info(subject_data: Dict) -> str:
     if 'opening_hours' in subject_data:
         info_parts.append(f"\n**운영시간**\n{subject_data['opening_hours']}")
     
-    # 어트랙션 정보 (새로운 구조 반영)
+    # 휴무일
+    if 'closed_days' in subject_data:
+        info_parts.append(f"\n**휴무일**: {subject_data['closed_days']}")
+    
+    # 티켓 정보
+    if 'ticket_info' in subject_data:
+        info_parts.append(f"\n**티켓 정보**")
+        ticket_info = subject_data['ticket_info']
+        for ticket_type, prices in ticket_info.items():
+            if isinstance(prices, dict):
+                price_list = []
+                for age_group, price in prices.items():
+                    if age_group == 'adult':
+                        price_list.append(f"성인: {price}")
+                    elif age_group == 'teen':
+                        price_list.append(f"청소년: {price}")
+                    elif age_group == 'child':
+                        price_list.append(f"어린이: {price}")
+                info_parts.append(f"  🎫 **{ticket_type}**: {', '.join(price_list)}")
+            elif isinstance(prices, str):
+                info_parts.append(f"  💰 **{ticket_type}**: {prices}")
+    
+    # 어트랙션 정보
     if 'attractions' in subject_data and subject_data['attractions']:
         info_parts.append(f"\n**주요 어트랙션**")
         
@@ -135,7 +173,7 @@ def format_subject_info(subject_data: Dict) -> str:
             elif isinstance(area_info, list):
                 info_parts.append(f"  • {', '.join(area_info)}")
     
-    # 시설 정보 (새로운 구조 반영)
+    # 시설 정보
     if 'facilities' in subject_data and subject_data['facilities']:
         info_parts.append(f"\n**시설 안내**")
         
@@ -143,6 +181,12 @@ def format_subject_info(subject_data: Dict) -> str:
         for facility_type, facility_list in facilities.items():
             if isinstance(facility_list, list):
                 info_parts.append(f"  🏢 **{facility_type}**: {', '.join(facility_list)}")
+    
+    # 방문 팁
+    if 'visitor_tips' in subject_data and subject_data['visitor_tips']:
+        info_parts.append(f"\n**방문 팁**")
+        for tip in subject_data['visitor_tips']:
+            info_parts.append(f"  💡 {tip}")
     
     # 웹사이트
     if 'official_website' in subject_data:
@@ -165,26 +209,20 @@ def subject_info_node(state: State) -> State:
             # JSON 데이터에서 찾은 정보가 있는 경우
             formatted_info = format_subject_info(found_subject)
             
-            # LLM을 사용해 더 자연스러운 응답 생성
-            prompt = f"""
+            # prompt.py의 프롬프트 사용
+            llm = get_upstage_llm(temperature=0.2)
+            system_prompt = get_subject_info_prompt()
+            user_prompt = f"""
 다음은 '{found_subject['name']}'에 대한 정보입니다:
 
 {formatted_info}
 
-위 정보를 바탕으로 사용자의 질문에 친근하고 자연스럽게 답변해 주세요.
 사용자 질문: {user_input}
-
-답변 시 다음 사항을 고려해 주세요:
-1. 제공된 정보를 모두 포함하되, 자연스러운 문체로 작성
-2. 사용자가 관심있어 할 만한 포인트를 강조 (특히 인기 어트랙션이나 특별한 시설)
-3. 실용적인 정보(위치, 시간, 주요 시설 등)를 명확히 전달
-4. 실내/실외 구분과 각 구역의 특색을 잘 설명
-5. 추가로 궁금한 점이 있다면 언제든 물어보라고 안내
-
-정확한 정보만 사용하고, 추측이나 없는 정보는 추가하지 마세요.
 """
             
-            result = llm.invoke(prompt)
+            # 시스템 프롬프트와 사용자 프롬프트를 결합
+            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+            result = llm.invoke(full_prompt)
             
             response = {
                 **state,
@@ -199,21 +237,18 @@ def subject_info_node(state: State) -> State:
             
         else:
             # JSON 데이터에서 찾지 못한 경우 일반적인 정보 제공
-            prompt = f"""
+            llm = get_upstage_llm(temperature=0.2)
+            system_prompt = get_subject_info_prompt()
+            user_prompt = f"""
 '{extracted_subject}'에 대한 정보를 요청받았지만, 저희 데이터베이스에서 해당 정보를 찾을 수 없습니다.
 
 사용자 요청: {user_input}
 
-다음과 같이 응답해 주세요:
-1. 현재 데이터베이스에 해당 정보가 없음을 정중히 안내
-2. 현재 제공 가능한 정보 카테고리 안내 (예: 테마파크, 관광지 등)
-3. 다른 관련 정보로 도움을 드릴 수 있는지 제안
-4. 일반적인 정보라도 도움이 될만한 내용이 있다면 간략히 제공
-
-친근하고 도움이 되는 톤으로 답변해 주세요.
+현재 제공 가능한 정보는 롯데월드에 대한 기본 정보입니다.
 """
             
-            result = llm.invoke(prompt)
+            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+            result = llm.invoke(full_prompt)
             
             response = {
                 **state,
