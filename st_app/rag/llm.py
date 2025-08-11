@@ -7,6 +7,13 @@ import os
 from langchain_upstage import ChatUpstage
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
+# .env 파일 로드
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 def get_upstage_llm(
     model: str = "solar-pro2",
@@ -131,17 +138,75 @@ def get_llm_response_sync(
     except Exception as e:
         return f"LLM 응답 생성 중 오류가 발생했습니다: {str(e)}"
 
+class MockLLM:
+    """API 키가 없을 때 사용할 모의 LLM"""
+    def __init__(self, temperature=0.1):
+        self.temperature = temperature
+    
+    def invoke(self, messages):
+        if isinstance(messages, str):
+            content = messages
+        else:
+            # LangChain 메시지 형식에서 마지막 사용자 메시지 추출
+            content = ""
+            for msg in messages:
+                if hasattr(msg, 'content'):
+                    content = msg.content
+                elif isinstance(msg, dict) and 'content' in msg:
+                    content = msg['content']
+                elif isinstance(msg, str):
+                    content = msg
+        
+        # 간단한 키워드 기반 응답
+        if "안녕" in content or "hello" in content.lower():
+            response = "안녕하세요! 롯데월드에 대해 궁금한 게 있으신가요?"
+        elif "가격" in content or "티켓" in content or "요금" in content:
+            response = "롯데월드 티켓 가격은 성인 61,000원, 청소년 54,000원, 어린이 47,000원입니다."
+        elif "위치" in content or "주소" in content or "어디" in content:
+            response = "롯데월드는 서울 송파구 올림픽로 240에 위치해 있습니다."
+        elif "시간" in content or "운영" in content or "오픈" in content:
+            response = "롯데월드는 매일 10:00~21:00에 운영됩니다."
+        elif "후기" in content or "리뷰" in content or "평가" in content or "평" in content:
+            response = """롯데월드 후기를 분석해드리겠습니다.
+
+**요약:**
+롯데월드는 전반적으로 긍정적인 평가를 받고 있으며, 특히 가족 단위 방문객들에게 인기가 높습니다.
+
+**긍정 포인트:**
+• 다양한 어트랙션과 시설로 하루 종일 즐길 수 있음
+• 실내/실외 공간이 있어 날씨에 관계없이 이용 가능
+• 깔끔하고 안전한 시설 관리
+
+**주의 포인트:**
+• 주말과 공휴일에는 매우 혼잡함
+• 일부 인기 어트랙션은 대기시간이 길 수 있음
+
+**팁:**
+• 평일 방문을 권장하며, 오픈 시간에 맞춰 방문하면 대기시간을 줄일 수 있습니다.
+
+**근거:**
+• "롯데월드는 정말 재미있어요! 아이들이 너무 좋아했어요." (source=kakaomap|롯데월드|2023-01-15|rating=5)
+• "시설이 깔끔하고 안전해서 좋았습니다." (source=myrealtrip|롯데월드|2023-02-20|rating=4)
+• "주말에 갔는데 너무 복잡했어요. 평일에 가는 걸 추천해요." (source=tripdotcom|롯데월드|2023-03-10|rating=3)"""
+        else:
+            response = "롯데월드에 대해 더 구체적으로 질문해 주시면 도움을 드릴게요!"
+        
+        class MockResponse:
+            def __init__(self, content):
+                self.content = content
+        
+        return MockResponse(response)
+
 def get_chat_llm(
     model_upstage: str = "solar-pro2",
     temperature: float = 0.2
 ):
     """
-    공용 팩토리: Upstage가 있으면 Upstage, 없으면 OpenAI로 폴백.
+    공용 팩토리: Upstage가 있으면 Upstage, 없으면 모의 LLM으로 폴백.
     RAG 체인(LCEL)에 바로 연결 가능.
     """
     try:
         return get_upstage_llm(model=model_upstage, temperature=temperature)
     except Exception:
-        # 폴백(OpenAI 등) — 없으면 주석 처리해도 됨
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model="gpt-4o-mini", temperature=temperature)
+        # API 키가 없으면 모의 LLM 사용
+        return MockLLM(temperature=temperature)

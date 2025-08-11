@@ -3,6 +3,11 @@ FAISS 인덱스 생성 및 임베딩 관련 기능
 """
 import os
 import json
+"""
+FAISS 인덱스 생성 및 임베딩 관련 기능
+"""
+import os
+import json
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Tuple
@@ -291,4 +296,5 @@ def create_faiss_index():
     print("FAISS index creation completed!")
 
 if __name__ == "__main__":
+    create_faiss_index()
     create_faiss_index()

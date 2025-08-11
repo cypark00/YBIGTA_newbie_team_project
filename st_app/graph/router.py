@@ -2,7 +2,9 @@ from st_app.rag.llm import get_upstage_llm, create_messages_from_history, get_ll
 from st_app.utils.state import State, get_conversation_history
 from st_app.rag.prompt import get_router_prompt
 from langgraph.graph import StateGraph, START, END
-
+from st_app.utils.state import AppState
+from st_app.rag.llm import get_upstage_llm
+from st_app.rag.prompt import get_intent_classification_prompt
 from st_app.graph.nodes.chat_node import chat_node
 from st_app.graph.nodes.subject_info_node import subject_info_node
 from st_app.graph.nodes.rag_review_node import rag_review_node
@@ -109,5 +111,4 @@ graph.add_conditional_edges(
 graph.add_edge("subject_info", END)
 graph.add_edge("rag_review", END)
 
-# 그래프 컴파일
 compiled = graph.compile()
