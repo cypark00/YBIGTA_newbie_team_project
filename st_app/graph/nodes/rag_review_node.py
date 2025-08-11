@@ -1,4 +1,4 @@
-# st_app/graph/nodes/rag_review_node.py
+
 from __future__ import annotations
 from typing import Dict, Any, List, Optional
 import os
@@ -104,63 +104,168 @@ def _to_document_hits(docs: List[Document]) -> List[Dict[str, Any]]:
     return results
 
 
-def rag_review_node(state: AppState) -> AppState:
-    """
-    FAISS 기반 리뷰 RAG 응답 노드
-    입력:
-      - state.messages (대화 로그)
-      - (선택) state.user_input
-      - state.retrieval_mode ("mmr"|"similarity"), state.top_k (int)
-    출력:
-      - state.messages (assistant 응답 추가)
-      - state.retrieved_docs (근거 메타 저장)
-      - state.last_query, state.retrieval_latency_ms, state.current_node="rag_review"
-    에러:
-      - state.error 에 간단한 사유 저장 후 chat으로 복귀
-    """
+"""
+RAG Review Node - 리뷰 데이터 기반 답변
+"""
+import os
+import json
+import numpy as np
+import faiss
+from typing import Dict, Any, List
+from st_app.utils.state import AppState
+from st_app.rag.llm import get_chat_llm
+from st_app.rag.prompt import RAG_REVIEW_SYSTEM_PROMPT
+
+def load_faiss_index(index_path: str = "st_app/db/faiss_index"):
+    """FAISS 인덱스 로드"""
     try:
-        # 1) 쿼리 확보
-        question = (state.get("user_input")
-                    or get_last_user_message(state)
-                    or "").strip()
-        if not question:
-            add_message(state, "assistant", "질문이 비어 있어요. 어떤 점이 궁금한가요?")
-            state["current_node"] = "rag_review"
-            return state
-
-        state["last_query"] = question
-
-        # 2) 리트리버 준비(모드/탑K는 상태에서 우선)
-        mode = state.get("retrieval_mode") or "mmr"
-        top_k = state.get("top_k") or 5
-        retriever = _ensure_retriever(mode=mode, k=top_k)
-
-        # 3) 검색 수행(진단 시간 기록)
-        t0 = mark_retrieval_start()
-        docs: List[Document] = retriever.get_relevant_documents(question)
-        mark_retrieval_end(state, t0)
-
-        # 4) 컨텍스트/근거 메타 구성
-        context = _format_context(docs)
-        state["retrieved_docs"] = _to_document_hits(docs)
-
-        # 5) 프롬프트 생성 및 LLM 호출
-        prompt_text = get_rag_review_prompt(context=context, question=question)
-        llm = get_chat_llm()
-        # LangChain ChatModel은 문자열 인풋도 받음(HumanMessage로 처리)
-        answer: str = llm.invoke(prompt_text).content
-
-        # 6) 메시지 기록 및 현재 노드 표시
-        add_message(state, "assistant", answer)
-        state["current_node"] = "rag_review"
-        state["error"] = None
-        return state
-
+        index_file = os.path.join(index_path, "index.faiss")
+        meta_file = os.path.join(index_path, "meta.json")
+        
+        if not os.path.exists(index_file) or not os.path.exists(meta_file):
+            print("FAISS index not found!")
+            return None
+        
+        # 인덱스 로드
+        index = faiss.read_index(index_file)
+        
+        # 메타데이터 로드
+        with open(meta_file, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        return {"index": index, "metadata": metadata}
+        
     except Exception as e:
-        # 에러시 사용자에게도 짧게 안내하고, 에러 저장
-        err_msg = f"리뷰 검색 중 오류가 발생했어요: {str(e)}"
-        add_message(state, "assistant", err_msg)
-        state["error"] = str(e)
-        state["current_node"] = "rag_review"
-        return state
+        print(f"Error loading FAISS index: {e}")
+        return None
+
+def search_similar_reviews(question: str, faiss_data: Dict, top_k: int = 5) -> List[Dict]:
+    """질문과 유사한 리뷰 검색"""
+    try:
+        from st_app.rag.embedder import _get_embedding_model
+        
+        # 임베딩 모델 로드
+        embedding_model = _get_embedding_model()
+        
+        # 질문 임베딩 생성
+        question_embedding = embedding_model.embed_documents([question])
+        question_vector = np.array(question_embedding, dtype='float32')
+        
+        # 정규화 (cosine similarity를 위해)
+        faiss.normalize_L2(question_vector)
+        
+        # FAISS 검색
+        index = faiss_data["index"]
+        metadata = faiss_data["metadata"]
+        
+        # 유사도 검색
+        similarities, indices = index.search(question_vector, top_k)
+        
+        # 결과 반환
+        results = []
+        for i, idx in enumerate(indices[0]):
+            if idx < len(metadata):
+                result = metadata[idx].copy()
+                result['similarity'] = float(similarities[0][i])
+                results.append(result)
+        
+        return results
+        
+    except Exception as e:
+        print(f"Search error: {e}")
+        return []
+
+def rag_review_node(state: AppState) -> Dict[str, Any]:
+    """RAG Review Node - 리뷰 데이터 기반 답변"""
+    try:
+        # 사용자 입력 가져오기
+        user_input = state.get('user_input', '')
+        messages = state.get('messages', [])
+        
+        # 질문 결정 (user_input 우선, 없으면 마지막 메시지)
+        if user_input:
+            question = user_input
+        elif messages:
+            question = messages[-1].get('content', '')
+        else:
+            question = ''
+        
+        if not question:
+            return {
+                'current_node': 'chat',
+                'messages': messages + [{'role': 'assistant', 'content': '질문을 입력해주세요.'}]
+            }
+        
+        # FAISS 인덱스 로드
+        faiss_data = load_faiss_index()
+        if not faiss_data:
+            return {
+                'current_node': 'chat',
+                'messages': messages + [{'role': 'assistant', 'content': '리뷰 데이터를 로드할 수 없습니다.'}]
+            }
+        
+        # 유사한 리뷰 검색 (더 많은 리뷰 검색)
+        similar_reviews = search_similar_reviews(question, faiss_data, top_k=8)
+        
+        if not similar_reviews:
+            return {
+                'current_node': 'chat',
+                'messages': messages + [{'role': 'assistant', 'content': '관련된 리뷰를 찾을 수 없습니다.'}]
+            }
+        
+        # 컨텍스트 구성 (더 자세한 정보 포함)
+        context_parts = []
+        for i, review in enumerate(similar_reviews, 1):
+            content = review.get('content', '')
+            platform = review.get('platform', '')
+            rating = review.get('rating', '')
+            date = review.get('date', '')
+            similarity = review.get('similarity', 0)
+            
+            context_part = f"[리뷰 {i}] {content}\n- 출처: {platform}\n- 평점: {rating}점\n- 날짜: {date}\n- 관련도: {similarity:.3f}"
+            context_parts.append(context_part)
+        
+        context = "\n\n".join(context_parts)
+        
+        # LLM 호출
+        llm = get_chat_llm()
+        
+        # 프롬프트 구성
+        system_prompt = RAG_REVIEW_SYSTEM_PROMPT.replace("{context}", context).replace("{question}", question)
+        
+        # 메시지 구성
+        chat_messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question}
+        ]
+        
+        # LLM 응답 생성
+        response = llm.invoke(chat_messages)
+        
+        # 응답 추출
+        if hasattr(response, 'content'):
+            answer = response.content
+        else:
+            answer = str(response)
+        
+        # 상태 업데이트
+        updated_messages = messages + [
+            {'role': 'user', 'content': question},
+            {'role': 'assistant', 'content': answer}
+        ]
+        
+        return {
+            'current_node': 'chat',
+            'messages': updated_messages
+        }
+        
+    except Exception as e:
+        print(f"RAG Review Node Error: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return {
+            'current_node': 'chat',
+            'messages': messages + [{'role': 'assistant', 'content': f'오류가 발생했습니다: {str(e)}'}]
+        }
 
