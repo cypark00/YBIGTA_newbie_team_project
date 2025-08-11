@@ -16,7 +16,7 @@ except ImportError:
 
 
 def get_upstage_llm(
-    model: str = "solar-pro",
+    model: str = "solar-pro2",
     temperature: float = 0.1,
     max_tokens: Optional[int] = None
 ) -> ChatUpstage:
@@ -24,7 +24,7 @@ def get_upstage_llm(
     Upstage LLM 인스턴스 생성
     
     Args:
-        model: 사용할 모델명 (기본: solar-pro)
+        model: 사용할 모델명 (기본: solar-pro2)
         temperature: 생성 온도 (기본: 0.1)
         max_tokens: 최대 토큰 수
         
@@ -198,7 +198,7 @@ class MockLLM:
         return MockResponse(response)
 
 def get_chat_llm(
-    model_upstage: str = "solar-pro",
+    model_upstage: str = "solar-pro2",
     temperature: float = 0.2
 ):
     """

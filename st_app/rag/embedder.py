@@ -3,11 +3,112 @@ FAISS 인덱스 생성 및 임베딩 관련 기능
 """
 import os
 import json
+"""
+FAISS 인덱스 생성 및 임베딩 관련 기능
+"""
+import os
+import json
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Tuple
 import faiss
 from langchain.schema import Document
+
+class FAISSVectorStore:
+    """FAISS 인덱스를 래핑한 벡터 스토어 클래스"""
+    
+    def __init__(self, index: faiss.Index, metadata: List[Dict[str, Any]], embedder=None):
+        self.index = index
+        self.metadata = metadata
+        self.embedder = embedder
+    
+    def _get_embedder(self):
+        """임베딩 함수 lazy loading"""
+        if self.embedder is None:
+            from langchain_upstage import UpstageEmbeddings
+            from dotenv import load_dotenv
+            
+            load_dotenv()
+            api_key = os.getenv("UPSTAGE_API_KEY")
+            if not api_key:
+                raise ValueError("UPSTAGE_API_KEY가 설정되지 않았습니다.")
+            
+            model_name = os.getenv("UPSTAGE_EMBED_MODEL", "solar-embedding-1-large")
+            self.embedder = UpstageEmbeddings(model=model_name, api_key=api_key)
+        
+        return self.embedder
+    
+    def _embed_query(self, query: str) -> np.ndarray:
+        """쿼리 임베딩"""
+        embedder = self._get_embedder()
+        embedding = embedder.embed_query(query)
+        embedding_array = np.array([embedding], dtype='float32')
+        faiss.normalize_L2(embedding_array)  # 코사인 유사도를 위한 정규화
+        return embedding_array
+    
+    def similarity_search(self, query: str, k: int = 5) -> List[Document]:
+        """유사도 검색 (점수 없이)"""
+        docs_with_scores = self.similarity_search_with_score(query, k)
+        return [doc for doc, _ in docs_with_scores]
+    
+    def similarity_search_with_score(self, query: str, k: int = 5) -> List[Tuple[Document, float]]:
+        """유사도 검색 (점수 포함)"""
+        # 쿼리 임베딩
+        query_embedding = self._embed_query(query)
+        
+        # FAISS 검색
+        scores, indices = self.index.search(query_embedding, k)
+        
+        # 결과 변환
+        results = []
+        for score, idx in zip(scores[0], indices[0]):
+            if idx >= 0 and idx < len(self.metadata):  # 유효한 인덱스 확인
+                meta = self.metadata[idx]
+                
+                # Document 생성
+                doc = Document(
+                    page_content=meta.get('content', ''),
+                    metadata={
+                        "platform": meta.get('platform', ''),
+                        "subject": meta.get('subject', ''),
+                        "place": meta.get('place', ''),
+                        "date": meta.get('date', ''),
+                        "rating": meta.get('rating'),
+                        "url": meta.get('url', ''),
+                        "source_row": idx,  # 원본 인덱스
+                        "chunk_index": idx
+                    }
+                )
+                
+                # FAISS IndexFlatIP는 내적을 반환하므로, 정규화된 벡터에서는 코사인 유사도
+                similarity_score = float(score)
+                results.append((doc, similarity_score))
+        
+        return results
+    
+    def add_documents(self, documents: List[Document]) -> None:
+        """문서 추가 (선택적 기능)"""
+        # 새 문서들의 텍스트 추출
+        texts = [doc.page_content for doc in documents]
+        
+        # 임베딩 생성
+        embeddings = create_embeddings(texts)
+        
+        # 인덱스에 추가
+        self.index.add(embeddings.astype('float32'))
+        
+        # 메타데이터 추가
+        for doc in documents:
+            meta = {
+                "content": doc.page_content,
+                "platform": doc.metadata.get('platform', ''),
+                "subject": doc.metadata.get('subject', ''),
+                "place": doc.metadata.get('place', ''),
+                "date": doc.metadata.get('date', ''),
+                "rating": doc.metadata.get('rating'),
+                "url": doc.metadata.get('url', '')
+            }
+            self.metadata.append(meta)
 
 def load_review_data() -> List[Dict[str, Any]]:
     """리뷰 데이터 로드"""
@@ -140,8 +241,8 @@ def build_faiss_index(documents: List[Document], index_path: str = "st_app/db/fa
     print(f"FAISS index saved to {index_path}")
     print(f"Indexed {len(documents)} documents")
 
-def load_faiss_index(index_path: str = "st_app/db/faiss_index"):
-    """FAISS 인덱스 로드"""
+def load_faiss_index(index_path: str = "st_app/db/faiss_index") -> FAISSVectorStore:
+    """FAISS 인덱스 로드 - FAISSVectorStore 객체 반환"""
     try:
         index_file = os.path.join(index_path, "index.faiss")
         meta_file = os.path.join(index_path, "meta.json")
@@ -149,6 +250,8 @@ def load_faiss_index(index_path: str = "st_app/db/faiss_index"):
         if not os.path.exists(index_file) or not os.path.exists(meta_file):
             print("FAISS index not found. Creating new index...")
             create_faiss_index()
+            # 재귀호출로 다시 로드
+            return load_faiss_index(index_path)
         
         # 인덱스 로드
         index = faiss.read_index(index_file)
@@ -157,10 +260,26 @@ def load_faiss_index(index_path: str = "st_app/db/faiss_index"):
         with open(meta_file, 'r', encoding='utf-8') as f:
             metadata = json.load(f)
         
-        return {"index": index, "metadata": metadata}
+        # 메타데이터 검증
+        print(f"Loaded {len(metadata)} metadata entries")
+        if metadata:
+            sample_meta = metadata[0]
+            print(f"Sample metadata keys: {list(sample_meta.keys())}")
+            print(f"Sample metadata: {sample_meta}")
+            
+            # 필수 키 확인
+            required_keys = ['content', 'platform', 'date', 'rating']
+            missing_keys = [key for key in required_keys if key not in sample_meta]
+            if missing_keys:
+                print(f"Warning: Missing keys in metadata: {missing_keys}")
+                print("Consider regenerating the FAISS index")
+        
+        # FAISSVectorStore 객체 반환
+        return FAISSVectorStore(index, metadata)
         
     except Exception as e:
         print(f"Error loading FAISS index: {e}")
+        print("You may need to regenerate the FAISS index")
         return None
 
 def create_faiss_index():
@@ -176,29 +295,6 @@ def create_faiss_index():
     
     print("FAISS index creation completed!")
 
-# 기존 LangChain 호환성을 위한 함수들
-def _get_embedding_model(model_name: Optional[str] = None):
-    """
-    Upstage 임베딩을 우선 사용하고, 키가 없거나 실패하면 멀티링구얼 SBERT로 폴백.
-    - 환경변수:
-        UPSTAGE_API_KEY
-        UPSTAGE_EMBED_MODEL (기본: "solar-embedding-1-large")
-    """
-    upstage_key = os.getenv("UPSTAGE_API_KEY")
-    if upstage_key:
-        try:
-            from langchain_upstage import UpstageEmbeddings
-            # 더 안전한 모델명 사용
-            up_model = os.getenv("UPSTAGE_EMBED_MODEL", "solar-embedding-1-large")
-            return UpstageEmbeddings(model=up_model, api_key=upstage_key)
-        except Exception as e:
-            print(f"[embedder] Upstage 임베딩 사용 실패 → 폴백합니다: {e}")
-
-    # 폴백: 한국어&다국어 무난한 소형 모델
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-    return HuggingFaceEmbeddings(
-        model_name=model_name or "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-    )
-
 if __name__ == "__main__":
+    create_faiss_index()
     create_faiss_index()
