@@ -297,6 +297,8 @@ database/reviews_tripdotcom.csv`
 
 ## streamlit cloud 주소 및 작동 화면 
 https://ybigtanewbieteamproject-ijeqvuveezmdhtx5dp3ikj.streamlit.app/
+![프로젝트 데모](demo_image.png)
+
 
 ## state class 구현 방식
 - `state.py`에서 대화 흐름의 **모든 상태 정보**를 하나의 `State` 클래스(TypedDict 기반)에 저장·관리.
@@ -312,8 +314,8 @@ https://ybigtanewbieteamproject-ijeqvuveezmdhtx5dp3ikj.streamlit.app/
   3. 각 노드에서 처리된 결과는 해당 필드에 기록되어, 이후 단계에서 재사용 가능
   4. RAG 검색 과정 시작/종료 시 `mark_retrieval_start()`·`mark_retrieval_end()`로 소요 시간 저장
   5. 모든 상태 정보는 세션 단위로 유지되어, 한 대화 흐름 안에서 데이터 일관성을 보장
-  
-  ### State 데이터 구조 요약
+
+### State 데이터 구조 요약
 
 | 구분 | 변수명 | 역할 |
 |------|--------|------|
@@ -328,17 +330,20 @@ https://ybigtanewbieteamproject-ijeqvuveezmdhtx5dp3ikj.streamlit.app/
 
 
 ## 조건부 라우팅 구현 방식
-- `router.py`에서 LangGraph의 `StateGraph`를 이용해 **대화 의도에 따라 실행 노드를 동적으로 선택**.
+- `router.py`에서 LangGraph의 `StateGraph`를 이용해 **LLM 기반으로 대화 의도를 분류**하고, 해당 의도에 맞는 실행 노드를 동적으로 선택.
 - **구현 절차**
-  1. START 지점에서 `direct_router()` 실행
-  2. `direct_router()`는 LLM(`get_upstage_llm`)을 호출해 입력 문장의 의도를 JSON 형식으로 분류  
+  1. **START** 지점에서 `direct_router()` 실행
+  2. `direct_router()`가 LLM(`get_upstage_llm`)을 호출해 입력 문장의 의도를 **JSON** 형식으로 분류  
      - 예: `{"intent": "rag_review"}` 또는 `{"intent": "subject_info"}`
-  3. JSON 파싱 실패 시, 키워드 매칭 기반 폴백 로직 수행  
+  3. **LLM 호출 또는 JSON 파싱 실패 시에만** 키워드 매칭 기반 폴백 로직 수행  
      - 리뷰·추천 관련 → `"rag_review"`  
      - 위치·가격·운영시간 관련 → `"subject_info"`  
      - 기타 → `"chat"`
-  4. 선택된 노드(chat, subject_info, rag_review) 실행 후 END로 종료
+  4. 매핑된 노드(`chat`, `subject_info`, `rag_review`)를 실행한 뒤 **END**로 종료
 - **그래프 구성**
   - `graph.add_node()`로 각 기능 노드 등록
-  - `graph.add_conditional_edges(START, direct_router, {...})`로 의도에 따른 분기 정의
-  - 모든 노드는 처리 후 `END`로 연결되어 대화 종료 또는 다음 입력 대기
+  - `graph.add_conditional_edges(START, direct_router, {...})`로 **LLM 기반** 의도 분기 정의
+  - 모든 노드는 처리 후 `END`로 연결되어 한 턴의 대화를 종료하고, 상위 로직에서 다음 입력을 받아 재시작
+
+## 로직 구조도
+![로직 구조도](drawio.png)
