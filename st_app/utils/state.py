@@ -33,6 +33,9 @@ class AppState(TypedDict):
     # 대화 메시지 기록
     messages: List[Dict[str, Any]]
     
+    # 사용자 입력
+    user_input: Optional[str]
+    
     # 사용자 의도 힌트 (chat_node에서 설정)
     intent_hint: Optional[Literal["chat", "subject_info", "review_rag"]]
     
@@ -66,6 +69,7 @@ def create_initial_state() -> AppState:
     """초기 상태 생성"""
     return AppState(
         messages=[],
+        user_input=None,
         intent_hint=None,
         candidate_targets=["롯데월드"],
         target="롯데월드",

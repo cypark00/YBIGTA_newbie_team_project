@@ -21,7 +21,7 @@ tomli==2.2.1
 typing_extensions==4.12.2
 uvicorn==0.34.0
 transformers==4.48.2
-torch==2.2.2+cpu
+torch>=2.0.0
 --extra-index-url https://download.pytorch.org/whl/cpu
 selenium
 bs4
